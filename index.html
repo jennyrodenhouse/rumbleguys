@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rumble Guys - Web Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+
+        .game-container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 20px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        h1 {
+            color: #fff;
+            font-size: 3em;
+            margin-bottom: 10px;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .score-board {
+            color: #fff;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-around;
+            max-width: 600px;
+            margin: 0 auto 20px;
+        }
+
+        .score-item {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+        }
+
+        canvas {
+            border: 4px solid #fff;
+            border-radius: 10px;
+            background: linear-gradient(180deg, #87CEEB 0%, #98D8E8 100%);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+            display: block;
+            margin: 0 auto;
+        }
+
+        .controls {
+            color: #fff;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            display: none;
+            z-index: 10;
+            text-align: center;
+        }
+
+        .game-over.active {
+            display: block;
+        }
+
+        .game-over h2 {
+            font-size: 3em;
+            margin-bottom: 20px;
+            color: #ff6b6b;
+        }
+
+        .game-over p {
+            font-size: 1.5em;
+            margin-bottom: 30px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .instructions {
+            color: #fff;
+            margin-top: 15px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <h1>🎮 RUMBLE GUYS 🎮</h1>
+        <div class="score-board">
+            <div class="score-item">Score: <span id="score">0</span></div>
+            <div class="score-item">High Score: <span id="highScore">0</span></div>
+            <div class="score-item">Level: <span id="level">1</span></div>
+        </div>
+        <canvas id="gameCanvas" width="600" height="400"></canvas>
+        <div class="controls">
+            <p>⬅️ LEFT ARROW | RIGHT ARROW ➡️ | SPACE to Jump</p>
+        </div>
+        <div class="instructions">
+            <p>Dodge the red obstacles! Collect yellow coins! Survive as long as possible!</p>
+        </div>
+    </div>
+
+    <div class="game-over" id="gameOver">
+        <h2>GAME OVER!</h2>
+        <p>Final Score: <span id="finalScore">0</span></p>
+        <p>High Score: <span id="finalHighScore">0</span></p>
+        <button onclick="restartGame()">Play Again</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const gameOverScreen = document.getElementById('gameOver');
+
+        // Game state
+        let gameRunning = true;
+        let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+        let level = 1;
+        let gameSpeed = 2;
+
+        // Player
+        const player = {
+            x: 50,
+            y: 300,
+            width: 30,
+            height: 30,
+            velocityY: 0,
+            jumping: false,
+            gravity: 0.6,
+            jumpPower: -12,
+            speed: 5
+        };
+
+        // Obstacles and coins
+        let obstacles = [];
+        let coins = [];
+        let frameCount = 0;
+
+        // Input handling
+        const keys = {};
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+            if (e.key === ' ' && !player.jumping) {
+                player.velocityY = player.jumpPower;
+                player.jumping = true;
+            }
+        });
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+
+        // Update high score display
+        document.getElementById('highScore').textContent = highScore;
+
+        function createObstacle() {
+            const height = Math.random() * 40 + 30;
+            obstacles.push({
+                x: canvas.width,
+                y: canvas.height - height - 70,
+                width: 25,
+                height: height,
+                speed: gameSpeed
+            });
+        }
+
+        function createCoin() {
+            coins.push({
+                x: canvas.width,
+                y: Math.random() * 200 + 100,
+                radius: 10,
+                speed: gameSpeed,
+                collected: false
+            });
+        }
+
+        function updatePlayer() {
+            // Horizontal movement
+            if (keys['ArrowLeft'] && player.x > 0) {
+                player.x -= player.speed;
+            }
+            if (keys['ArrowRight'] && player.x < canvas.width - player.width) {
+                player.x += player.speed;
+            }
+
+            // Vertical movement (gravity and jumping)
+            player.velocityY += player.gravity;
+            player.y += player.velocityY;
+
+            // Ground collision
+            const groundY = canvas.height - 100;
+            if (player.y >= groundY) {
+                player.y = groundY;
+                player.velocityY = 0;
+                player.jumping = false;
+            }
+        }
+
+        function updateObstacles() {
+            obstacles = obstacles.filter(obs => {
+                obs.x -= obs.speed;
+
+                // Check collision with player
+                if (player.x < obs.x + obs.width &&
+                    player.x + player.width > obs.x &&
+                    player.y < obs.y + obs.height &&
+                    player.y + player.height > obs.y) {
+                    gameOver();
+                    return false;
+                }
+
+                return obs.x + obs.width > 0;
+            });
+        }
+
+        function updateCoins() {
+            coins = coins.filter(coin => {
+                coin.x -= coin.speed;
+
+                // Check collision with player
+                const dx = (player.x + player.width / 2) - coin.x;
+                const dy = (player.y + player.height / 2) - coin.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance < player.width / 2 + coin.radius && !coin.collected) {
+                    coin.collected = true;
+                    score += 10;
+                    document.getElementById('score').textContent = score;
+                    return false;
+                }
+
+                return coin.x + coin.radius > 0;
+            });
+        }
+
+        function drawPlayer() {
+            // Draw player as a cute character
+            ctx.fillStyle = '#4a90e2';
+            ctx.fillRect(player.x, player.y, player.width, player.height);
+
+            // Eyes
+            ctx.fillStyle = '#fff';
+            ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
+            ctx.fillRect(player.x + 16, player.y + 8, 6, 6);
+
+            // Pupils
+            ctx.fillStyle = '#000';
+            ctx.fillRect(player.x + 10, player.y + 10, 3, 3);
+            ctx.fillRect(player.x + 18, player.y + 10, 3, 3);
+
+            // Smile
+            ctx.strokeStyle = '#000';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.arc(player.x + 15, player.y + 20, 8, 0, Math.PI);
+            ctx.stroke();
+        }
+
+        function drawObstacles() {
+            obstacles.forEach(obs => {
+                ctx.fillStyle = '#e74c3c';
+                ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
+
+                // Add some detail
+                ctx.fillStyle = '#c0392b';
+                ctx.fillRect(obs.x + 5, obs.y + 5, obs.width - 10, obs.height - 10);
+            });
+        }
+
+        function drawCoins() {
+            coins.forEach(coin => {
+                if (!coin.collected) {
+                    ctx.fillStyle = '#f1c40f';
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Coin detail
+                    ctx.fillStyle = '#f39c12';
+                    ctx.beginPath();
+                    ctx.arc(coin.x, coin.y, coin.radius - 3, 0, Math.PI * 2);
+                    ctx.fill();
+
+                    // Shine effect
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(coin.x - 2, coin.y - 4, 4, 3);
+                }
+            });
+        }
+
+        function drawGround() {
+            // Ground
+            ctx.fillStyle = '#2ecc71';
+            ctx.fillRect(0, canvas.height - 70, canvas.width, 70);
+
+            // Ground detail
+            ctx.fillStyle = '#27ae60';
+            for (let i = 0; i < canvas.width; i += 40) {
+                ctx.fillRect(i, canvas.height - 70, 20, 5);
+            }
+        }
+
+        function drawClouds() {
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            const cloudOffset = (frameCount * 0.2) % canvas.width;
+
+            for (let i = -100; i < canvas.width + 100; i += 200) {
+                const x = (i + cloudOffset) % (canvas.width + 200) - 100;
+                ctx.beginPath();
+                ctx.arc(x, 50, 20, 0, Math.PI * 2);
+                ctx.arc(x + 20, 50, 25, 0, Math.PI * 2);
+                ctx.arc(x + 40, 50, 20, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+
+        function updateLevel() {
+            const newLevel = Math.floor(score / 100) + 1;
+            if (newLevel > level) {
+                level = newLevel;
+                gameSpeed = 2 + (level - 1) * 0.5;
+                document.getElementById('level').textContent = level;
+            }
+        }
+
+        function gameOver() {
+            gameRunning = false;
+            gameOverScreen.classList.add('active');
+            document.getElementById('finalScore').textContent = score;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+
+            document.getElementById('finalHighScore').textContent = highScore;
+        }
+
+        function restartGame() {
+            gameRunning = true;
+            score = 0;
+            level = 1;
+            gameSpeed = 2;
+            obstacles = [];
+            coins = [];
+            frameCount = 0;
+
+            player.x = 50;
+            player.y = 300;
+            player.velocityY = 0;
+            player.jumping = false;
+
+            document.getElementById('score').textContent = score;
+            document.getElementById('level').textContent = level;
+            document.getElementById('highScore').textContent = highScore;
+            gameOverScreen.classList.remove('active');
+
+            gameLoop();
+        }
+
+        function gameLoop() {
+            if (!gameRunning) return;
+
+            // Clear canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw background elements
+            drawClouds();
+            drawGround();
+
+            // Update game objects
+            updatePlayer();
+            updateObstacles();
+            updateCoins();
+            updateLevel();
+
+            // Draw game objects
+            drawPlayer();
+            drawObstacles();
+            drawCoins();
+
+            // Spawn obstacles and coins
+            frameCount++;
+            if (frameCount % 120 === 0) {
+                createObstacle();
+            }
+            if (frameCount % 80 === 0) {
+                createCoin();
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // Start the game
+        gameLoop();
+    </script>
+</body>
+</html>
