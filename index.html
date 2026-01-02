@@ -856,7 +856,8 @@
             document.getElementById('gameOver').classList.remove('active');
         }
 
-        function startGame() {
+        // Make startGame globally accessible
+        window.startGame = function() {
             console.log('Start game button clicked!');
             try {
                 document.getElementById('characterSelect').classList.add('hidden');
@@ -867,7 +868,7 @@
                 console.error('Error starting game:', error);
                 alert('Error starting game: ' + error.message);
             }
-        }
+        };
 
         // Input handling
         document.addEventListener('keydown', (e) => {
@@ -1053,6 +1054,10 @@
             renderer.render(scene, camera);
         }
 
+        // Make functions globally accessible for onclick handlers
+        window.restartGame = restartGame;
+        window.showCharacterSelect = showCharacterSelect;
+
         // Initialize
         try {
             initScene();
@@ -1061,6 +1066,8 @@
             console.log('Character select initialized successfully');
             animate();
             console.log('Animation started successfully');
+            console.log('startGame function is defined:', typeof window.startGame);
+            console.log('restartGame function is defined:', typeof window.restartGame);
         } catch (error) {
             console.error('Initialization error:', error);
             alert('Error loading game: ' + error.message + '\n\nPlease refresh the page.');
