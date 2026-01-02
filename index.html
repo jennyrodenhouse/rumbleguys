@@ -228,8 +228,8 @@
 
     <div class="character-select" id="characterSelect">
         <h2>Choose Your 3D Character!</h2>
+        <p style="color: rgba(255,255,255,0.7); font-size: 1.2em; margin-bottom: 20px;">Click any character to start playing!</p>
         <div class="character-grid" id="characterGrid"></div>
-        <button onclick="startGame()">START GAME</button>
     </div>
 
     <div class="ui-overlay">
@@ -848,6 +848,11 @@
             document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
             cardElement.classList.add('selected');
             document.getElementById('currentCharacter').textContent = char.name;
+
+            // Auto-start game after selecting character
+            setTimeout(() => {
+                startGame();
+            }, 300); // Small delay for visual feedback
         }
 
         function showCharacterSelect() {
