@@ -68,6 +68,71 @@
             font-size: 1.1em;
         }
 
+        .character-select {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #fff;
+            padding: 40px;
+            border-radius: 20px;
+            z-index: 15;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .character-select.hidden {
+            display: none;
+        }
+
+        .character-select h2 {
+            font-size: 2.5em;
+            margin-bottom: 30px;
+            background: linear-gradient(45deg, #667eea, #764ba2, #f093fb);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .character-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .character-card {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .character-card:hover {
+            background: rgba(255, 255, 255, 0.2);
+            transform: scale(1.05);
+            border-color: #667eea;
+        }
+
+        .character-card.selected {
+            background: rgba(102, 126, 234, 0.4);
+            border-color: #f093fb;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .character-icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .character-name {
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
         .game-over {
             position: absolute;
             top: 50%;
@@ -107,6 +172,7 @@
             cursor: pointer;
             transition: transform 0.2s, box-shadow 0.2s;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            margin: 5px;
         }
 
         button:hover {
@@ -124,11 +190,29 @@
             font-size: 0.9em;
             opacity: 0.8;
         }
+
+        .current-character {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 10px 20px;
+            border-radius: 10px;
+            color: #fff;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
     </style>
 </head>
 <body>
+    <div class="character-select" id="characterSelect">
+        <h2>Choose Your Character!</h2>
+        <div class="character-grid" id="characterGrid"></div>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
     <div class="game-container">
         <h1>🎮 RUMBLE GUYS 🎮</h1>
+        <div class="current-character">
+            Playing as: <span id="currentCharacter">Human</span>
+        </div>
         <div class="score-board">
             <div class="score-item">Score: <span id="score">0</span></div>
             <div class="score-item">High Score: <span id="highScore">0</span></div>
@@ -136,7 +220,7 @@
         </div>
         <canvas id="gameCanvas" width="600" height="400"></canvas>
         <div class="controls">
-            <p>⬅️ LEFT ARROW | RIGHT ARROW ➡️ | SPACE to Jump</p>
+            <p>⬅️ LEFT ARROW | RIGHT ARROW ➡️ | SPACE to Jump | C to Change Character</p>
         </div>
         <div class="instructions">
             <p>Dodge the red obstacles! Collect yellow coins! Survive as long as possible!</p>
@@ -148,15 +232,38 @@
         <p>Final Score: <span id="finalScore">0</span></p>
         <p>High Score: <span id="finalHighScore">0</span></p>
         <button onclick="restartGame()">Play Again</button>
+        <button onclick="showCharacterSelect()">Change Character</button>
     </div>
 
     <script>
         const canvas = document.getElementById('gameCanvas');
         const ctx = canvas.getContext('2d');
         const gameOverScreen = document.getElementById('gameOver');
+        const characterSelectScreen = document.getElementById('characterSelect');
+
+        // Character types
+        const characters = [
+            { id: 'human', name: 'Human', icon: '🧍', color: '#4a90e2' },
+            { id: 'tree', name: 'Tree', icon: '🌳', color: '#2d5016' },
+            { id: 'bird', name: 'Bird', icon: '🐦', color: '#ffcc00' },
+            { id: 'chair', name: 'Chair', icon: '🪑', color: '#8b4513' },
+            { id: 'bear', name: 'Bear', icon: '🐻', color: '#8b4513' },
+            { id: 'plant', name: 'Plant', icon: '🌱', color: '#22c55e' },
+            { id: 'dog-sports', name: 'Sports Dog', icon: '🐕', color: '#ff6b6b' },
+            { id: 'cat-sports', name: 'Sports Cat', icon: '🐈', color: '#ff8c42' },
+            { id: 'basketball', name: 'Basketball', icon: '🏀', color: '#ff6600' },
+            { id: 'king', name: 'King', icon: '🤴', color: '#ffd700' },
+            { id: 'queen', name: 'Queen', icon: '👸', color: '#ff69b4' },
+            { id: 'penguin', name: 'Penguin', icon: '🐧', color: '#000000' },
+            { id: 'rabbit', name: 'Rabbit', icon: '🐰', color: '#d4a5a5' },
+            { id: 'flower', name: 'Flower', icon: '🌺', color: '#ff1493' },
+            { id: 'cactus', name: 'Cactus', icon: '🌵', color: '#3d9970' }
+        ];
+
+        let selectedCharacter = characters[0];
 
         // Game state
-        let gameRunning = true;
+        let gameRunning = false;
         let score = 0;
         let highScore = localStorage.getItem('highScore') || 0;
         let level = 1;
@@ -166,8 +273,8 @@
         const player = {
             x: 50,
             y: 300,
-            width: 30,
-            height: 30,
+            width: 35,
+            height: 35,
             velocityY: 0,
             jumping: false,
             gravity: 0.6,
@@ -180,13 +287,53 @@
         let coins = [];
         let frameCount = 0;
 
+        // Initialize character selection
+        function initCharacterSelect() {
+            const grid = document.getElementById('characterGrid');
+            characters.forEach(char => {
+                const card = document.createElement('div');
+                card.className = 'character-card';
+                if (char.id === selectedCharacter.id) {
+                    card.classList.add('selected');
+                }
+                card.innerHTML = `
+                    <div class="character-icon">${char.icon}</div>
+                    <div class="character-name">${char.name}</div>
+                `;
+                card.onclick = () => selectCharacter(char, card);
+                grid.appendChild(card);
+            });
+        }
+
+        function selectCharacter(char, cardElement) {
+            selectedCharacter = char;
+            document.querySelectorAll('.character-card').forEach(c => c.classList.remove('selected'));
+            cardElement.classList.add('selected');
+            document.getElementById('currentCharacter').textContent = char.name;
+        }
+
+        function showCharacterSelect() {
+            gameRunning = false;
+            characterSelectScreen.classList.remove('hidden');
+            gameOverScreen.classList.remove('active');
+        }
+
+        function startGame() {
+            characterSelectScreen.classList.add('hidden');
+            gameRunning = true;
+            restartGame();
+        }
+
         // Input handling
         const keys = {};
         document.addEventListener('keydown', (e) => {
             keys[e.key] = true;
-            if (e.key === ' ' && !player.jumping) {
+            if (e.key === ' ' && !player.jumping && gameRunning) {
                 player.velocityY = player.jumpPower;
                 player.jumping = true;
+            }
+            if (e.key.toLowerCase() === 'c' && gameRunning) {
+                showCharacterSelect();
             }
         });
         document.addEventListener('keyup', (e) => {
@@ -218,6 +365,8 @@
         }
 
         function updatePlayer() {
+            if (!gameRunning) return;
+
             // Horizontal movement
             if (keys['ArrowLeft'] && player.x > 0) {
                 player.x -= player.speed;
@@ -276,35 +425,323 @@
             });
         }
 
+        function drawCharacter(x, y, w, h, charType) {
+            ctx.save();
+
+            switch(charType.id) {
+                case 'human':
+                    // Body
+                    ctx.fillStyle = '#4a90e2';
+                    ctx.fillRect(x, y, w, h);
+                    // Head
+                    ctx.fillStyle = '#ffdbac';
+                    ctx.fillRect(x + 5, y - 8, w - 10, 8);
+                    // Eyes
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(x + 10, y - 5, 3, 2);
+                    ctx.fillRect(x + w - 13, y - 5, 3, 2);
+                    break;
+
+                case 'tree':
+                    // Trunk
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(x + w/3, y + h/2, w/3, h/2);
+                    // Leaves
+                    ctx.fillStyle = '#228b22';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/3, w/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillRect(x + 5, y + 5, w - 10, h/3);
+                    break;
+
+                case 'bird':
+                    // Body
+                    ctx.fillStyle = '#ffcc00';
+                    ctx.beginPath();
+                    ctx.ellipse(x + w/2, y + h/2, w/2, h/3, 0, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Head
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Beak
+                    ctx.fillStyle = '#ff6600';
+                    ctx.beginPath();
+                    ctx.moveTo(x + w/2 + w/3, y + h/4);
+                    ctx.lineTo(x + w, y + h/4);
+                    ctx.lineTo(x + w/2 + w/3, y + h/4 + 5);
+                    ctx.fill();
+                    // Wing
+                    ctx.fillStyle = '#ffa500';
+                    ctx.beginPath();
+                    ctx.ellipse(x + w/4, y + h/2, w/4, h/4, -0.5, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'chair':
+                    // Seat
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(x, y + h/2, w, h/6);
+                    // Back
+                    ctx.fillRect(x, y, w/6, h/2);
+                    // Legs
+                    ctx.fillRect(x + 2, y + h/2 + h/6, w/8, h/3);
+                    ctx.fillRect(x + w - w/8 - 2, y + h/2 + h/6, w/8, h/3);
+                    break;
+
+                case 'bear':
+                    // Body
+                    ctx.fillStyle = '#8b4513';
+                    ctx.fillRect(x, y + h/3, w, h*2/3);
+                    // Head
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Ears
+                    ctx.beginPath();
+                    ctx.arc(x + w/4, y, w/6, 0, Math.PI * 2);
+                    ctx.arc(x + w*3/4, y, w/6, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Snout
+                    ctx.fillStyle = '#d2b48c';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/3, w/5, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'plant':
+                    // Pot
+                    ctx.fillStyle = '#cd853f';
+                    ctx.fillRect(x + w/4, y + h*2/3, w/2, h/3);
+                    // Stem
+                    ctx.strokeStyle = '#228b22';
+                    ctx.lineWidth = 3;
+                    ctx.beginPath();
+                    ctx.moveTo(x + w/2, y + h*2/3);
+                    ctx.lineTo(x + w/2, y + h/4);
+                    ctx.stroke();
+                    // Leaves
+                    ctx.fillStyle = '#22c55e';
+                    for(let i = 0; i < 3; i++) {
+                        ctx.beginPath();
+                        ctx.ellipse(x + w/2 + (i % 2 ? 10 : -10), y + h/4 + i * 10, 8, 12, i % 2 ? 0.5 : -0.5, 0, Math.PI * 2);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 'dog-sports':
+                case 'cat-sports':
+                    // Body with jersey
+                    ctx.fillStyle = charType.id === 'dog-sports' ? '#ff6b6b' : '#ff8c42';
+                    ctx.fillRect(x, y + h/3, w, h*2/3);
+                    // Number on jersey
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 16px Arial';
+                    ctx.fillText('23', x + w/4, y + h*2/3);
+                    // Head
+                    ctx.fillStyle = charType.id === 'dog-sports' ? '#d2691e' : '#ffa07a';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Ears
+                    if(charType.id === 'dog-sports') {
+                        ctx.fillRect(x, y + h/6, w/5, h/4);
+                        ctx.fillRect(x + w - w/5, y + h/6, w/5, h/4);
+                    } else {
+                        ctx.beginPath();
+                        ctx.moveTo(x + w/4, y);
+                        ctx.lineTo(x + w/4 - 5, y - 8);
+                        ctx.lineTo(x + w/4 + 5, y);
+                        ctx.fill();
+                        ctx.beginPath();
+                        ctx.moveTo(x + w*3/4, y);
+                        ctx.lineTo(x + w*3/4 - 5, y - 8);
+                        ctx.lineTo(x + w*3/4 + 5, y);
+                        ctx.fill();
+                    }
+                    break;
+
+                case 'basketball':
+                    // Ball
+                    ctx.fillStyle = '#ff6600';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/2, w/2, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Lines
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 2;
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/2, w/2, 0, Math.PI * 2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + h/2);
+                    ctx.quadraticCurveTo(x + w/2, y + h/4, x + w, y + h/2);
+                    ctx.stroke();
+                    ctx.beginPath();
+                    ctx.moveTo(x, y + h/2);
+                    ctx.quadraticCurveTo(x + w/2, y + h*3/4, x + w, y + h/2);
+                    ctx.stroke();
+                    break;
+
+                case 'king':
+                    // Robe
+                    ctx.fillStyle = '#8b0000';
+                    ctx.fillRect(x, y + h/3, w, h*2/3);
+                    // Cape
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(x - 5, y + h/3, 5, h/2);
+                    ctx.fillRect(x + w, y + h/3, 5, h/2);
+                    // Head
+                    ctx.fillStyle = '#ffdbac';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Crown
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(x + w/4, y - 5, w/2, 8);
+                    ctx.fillRect(x + w/4, y - 10, w/8, 5);
+                    ctx.fillRect(x + w/2 - w/16, y - 10, w/8, 5);
+                    ctx.fillRect(x + w*3/4 - w/8, y - 10, w/8, 5);
+                    // Gems
+                    ctx.fillStyle = '#ff0000';
+                    ctx.fillRect(x + w/4 + 2, y - 8, 3, 3);
+                    ctx.fillRect(x + w/2 - 1, y - 8, 3, 3);
+                    ctx.fillRect(x + w*3/4 - 5, y - 8, 3, 3);
+                    break;
+
+                case 'queen':
+                    // Dress
+                    ctx.fillStyle = '#ff69b4';
+                    ctx.beginPath();
+                    ctx.moveTo(x + w/2, y + h/3);
+                    ctx.lineTo(x - 5, y + h);
+                    ctx.lineTo(x + w + 5, y + h);
+                    ctx.closePath();
+                    ctx.fill();
+                    // Torso
+                    ctx.fillRect(x + w/4, y + h/3, w/2, h/4);
+                    // Head
+                    ctx.fillStyle = '#ffdbac';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Crown
+                    ctx.fillStyle = '#ffd700';
+                    ctx.fillRect(x + w/4, y - 5, w/2, 8);
+                    for(let i = 0; i < 4; i++) {
+                        ctx.beginPath();
+                        ctx.moveTo(x + w/4 + i * (w/2)/3, y - 5);
+                        ctx.lineTo(x + w/4 + i * (w/2)/3 + (w/8)/2, y - 12);
+                        ctx.lineTo(x + w/4 + (i + 1) * (w/2)/3, y - 5);
+                        ctx.fill();
+                    }
+                    // Jewelry
+                    ctx.fillStyle = '#00ffff';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y - 9, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'penguin':
+                    // Body
+                    ctx.fillStyle = '#000';
+                    ctx.fillRect(x, y, w, h);
+                    // Belly
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(x + w/4, y + h/4, w/2, h/2);
+                    // Beak
+                    ctx.fillStyle = '#ff6600';
+                    ctx.fillRect(x + w/2 - 3, y + h/3, 6, 4);
+                    // Eyes
+                    ctx.fillStyle = '#fff';
+                    ctx.beginPath();
+                    ctx.arc(x + w/3, y + h/4, 4, 0, Math.PI * 2);
+                    ctx.arc(x + w*2/3, y + h/4, 4, 0, Math.PI * 2);
+                    ctx.fill();
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(x + w/3, y + h/4, 2, 0, Math.PI * 2);
+                    ctx.arc(x + w*2/3, y + h/4, 2, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'rabbit':
+                    // Body
+                    ctx.fillStyle = '#d4a5a5';
+                    ctx.fillRect(x, y + h/3, w, h*2/3);
+                    // Head
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/4, w/3, 0, Math.PI * 2);
+                    ctx.fill();
+                    // Ears
+                    ctx.fillRect(x + w/4, y - h/4, w/6, h/2);
+                    ctx.fillRect(x + w*3/4 - w/6, y - h/4, w/6, h/2);
+                    // Inner ears
+                    ctx.fillStyle = '#ffb6c1';
+                    ctx.fillRect(x + w/4 + 2, y - h/4 + 2, w/6 - 4, h/2 - 4);
+                    ctx.fillRect(x + w*3/4 - w/6 + 2, y - h/4 + 2, w/6 - 4, h/2 - 4);
+                    break;
+
+                case 'flower':
+                    // Stem
+                    ctx.strokeStyle = '#228b22';
+                    ctx.lineWidth = 4;
+                    ctx.beginPath();
+                    ctx.moveTo(x + w/2, y + h);
+                    ctx.lineTo(x + w/2, y + h/2);
+                    ctx.stroke();
+                    // Petals
+                    ctx.fillStyle = '#ff1493';
+                    for(let i = 0; i < 6; i++) {
+                        ctx.save();
+                        ctx.translate(x + w/2, y + h/3);
+                        ctx.rotate(i * Math.PI / 3);
+                        ctx.beginPath();
+                        ctx.ellipse(0, -10, 6, 10, 0, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.restore();
+                    }
+                    // Center
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(x + w/2, y + h/3, 6, 0, Math.PI * 2);
+                    ctx.fill();
+                    break;
+
+                case 'cactus':
+                    // Main body
+                    ctx.fillStyle = '#3d9970';
+                    ctx.fillRect(x + w/3, y, w/3, h);
+                    // Arms
+                    ctx.fillRect(x, y + h/3, w/3, h/4);
+                    ctx.fillRect(x, y + h/3, w/6, h/3);
+                    ctx.fillRect(x + w*2/3, y + h/2, w/3, h/4);
+                    ctx.fillRect(x + w*5/6, y + h/2, w/6, h/3);
+                    // Spines
+                    ctx.strokeStyle = '#fff';
+                    ctx.lineWidth = 1;
+                    for(let i = 0; i < 5; i++) {
+                        for(let j = 0; j < 3; j++) {
+                            ctx.beginPath();
+                            ctx.moveTo(x + w/3 + j * w/6, y + i * h/5);
+                            ctx.lineTo(x + w/3 + j * w/6 - 3, y + i * h/5 - 3);
+                            ctx.stroke();
+                        }
+                    }
+                    break;
+            }
+
+            ctx.restore();
+        }
+
         function drawPlayer() {
-            // Draw player as a cute character
-            ctx.fillStyle = '#4a90e2';
-            ctx.fillRect(player.x, player.y, player.width, player.height);
-
-            // Eyes
-            ctx.fillStyle = '#fff';
-            ctx.fillRect(player.x + 8, player.y + 8, 6, 6);
-            ctx.fillRect(player.x + 16, player.y + 8, 6, 6);
-
-            // Pupils
-            ctx.fillStyle = '#000';
-            ctx.fillRect(player.x + 10, player.y + 10, 3, 3);
-            ctx.fillRect(player.x + 18, player.y + 10, 3, 3);
-
-            // Smile
-            ctx.strokeStyle = '#000';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(player.x + 15, player.y + 20, 8, 0, Math.PI);
-            ctx.stroke();
+            drawCharacter(player.x, player.y, player.width, player.height, selectedCharacter);
         }
 
         function drawObstacles() {
             obstacles.forEach(obs => {
                 ctx.fillStyle = '#e74c3c';
                 ctx.fillRect(obs.x, obs.y, obs.width, obs.height);
-
-                // Add some detail
                 ctx.fillStyle = '#c0392b';
                 ctx.fillRect(obs.x + 5, obs.y + 5, obs.width - 10, obs.height - 10);
             });
@@ -317,14 +754,10 @@
                     ctx.beginPath();
                     ctx.arc(coin.x, coin.y, coin.radius, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // Coin detail
                     ctx.fillStyle = '#f39c12';
                     ctx.beginPath();
                     ctx.arc(coin.x, coin.y, coin.radius - 3, 0, Math.PI * 2);
                     ctx.fill();
-
-                    // Shine effect
                     ctx.fillStyle = '#fff';
                     ctx.fillRect(coin.x - 2, coin.y - 4, 4, 3);
                 }
@@ -332,11 +765,8 @@
         }
 
         function drawGround() {
-            // Ground
             ctx.fillStyle = '#2ecc71';
             ctx.fillRect(0, canvas.height - 70, canvas.width, 70);
-
-            // Ground detail
             ctx.fillStyle = '#27ae60';
             for (let i = 0; i < canvas.width; i += 40) {
                 ctx.fillRect(i, canvas.height - 70, 20, 5);
@@ -346,7 +776,6 @@
         function drawClouds() {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
             const cloudOffset = (frameCount * 0.2) % canvas.width;
-
             for (let i = -100; i < canvas.width + 100; i += 200) {
                 const x = (i + cloudOffset) % (canvas.width + 200) - 100;
                 ctx.beginPath();
@@ -398,31 +827,30 @@
             document.getElementById('highScore').textContent = highScore;
             gameOverScreen.classList.remove('active');
 
+            if (!characterSelectScreen.classList.contains('hidden')) {
+                characterSelectScreen.classList.add('hidden');
+            }
+
             gameLoop();
         }
 
         function gameLoop() {
             if (!gameRunning) return;
 
-            // Clear canvas
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // Draw background elements
             drawClouds();
             drawGround();
 
-            // Update game objects
             updatePlayer();
             updateObstacles();
             updateCoins();
             updateLevel();
 
-            // Draw game objects
             drawPlayer();
             drawObstacles();
             drawCoins();
 
-            // Spawn obstacles and coins
             frameCount++;
             if (frameCount % 120 === 0) {
                 createObstacle();
@@ -434,8 +862,8 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // Start the game
-        gameLoop();
+        // Initialize
+        initCharacterSelect();
     </script>
 </body>
 </html>
