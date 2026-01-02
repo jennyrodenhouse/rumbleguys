@@ -350,38 +350,112 @@
             return group;
         }
 
-        // Create fire wall
+        // Create realistic 3D fire wall
         function createFireWall() {
             const group = new THREE.Group();
 
-            // Main fire wall
-            const wallGeo = new THREE.BoxGeometry(20, 10, 2);
-            const wallMat = new THREE.MeshStandardMaterial({
-                color: 0xff4500,
-                emissive: 0xff6600,
-                emissiveIntensity: 0.8
-            });
-            const wall = new THREE.Mesh(wallGeo, wallMat);
-            wall.position.y = 5;
-            group.add(wall);
+            // Create multiple layers of flames for depth
+            const flameCount = 80; // More flames for realistic effect
 
-            // Flames
-            for (let i = 0; i < 10; i++) {
-                const flameGeo = new THREE.ConeGeometry(0.5, 2, 8);
+            for (let i = 0; i < flameCount; i++) {
+                // Varied flame sizes
+                const size = 0.4 + Math.random() * 1.2;
+                const height = 1.5 + Math.random() * 3;
+
+                const flameGeo = new THREE.ConeGeometry(size, height, 8);
+
+                // Realistic fire colors - from deep red to yellow-white
+                const colorChoice = Math.random();
+                let flameColor, emissiveColor, emissiveIntensity;
+
+                if (colorChoice < 0.3) {
+                    // Deep red/orange base
+                    flameColor = 0xff2200;
+                    emissiveColor = 0xff4400;
+                    emissiveIntensity = 2.0;
+                } else if (colorChoice < 0.6) {
+                    // Bright orange middle
+                    flameColor = 0xff6600;
+                    emissiveColor = 0xff8800;
+                    emissiveIntensity = 2.5;
+                } else if (colorChoice < 0.85) {
+                    // Yellow-orange tips
+                    flameColor = 0xffaa00;
+                    emissiveColor = 0xffcc00;
+                    emissiveIntensity = 3.0;
+                } else {
+                    // Hot white/yellow core
+                    flameColor = 0xffffaa;
+                    emissiveColor = 0xffff66;
+                    emissiveIntensity = 4.0;
+                }
+
                 const flameMat = new THREE.MeshStandardMaterial({
-                    color: Math.random() > 0.5 ? 0xff6600 : 0xffaa00,
-                    emissive: 0xff4500,
-                    emissiveIntensity: 1
+                    color: flameColor,
+                    emissive: emissiveColor,
+                    emissiveIntensity: emissiveIntensity,
+                    transparent: true,
+                    opacity: 0.7 + Math.random() * 0.3
                 });
+
                 const flame = new THREE.Mesh(flameGeo, flameMat);
+
+                // Position flames across the width and in multiple depth layers
                 flame.position.set(
-                    (Math.random() - 0.5) * 18,
-                    Math.random() * 8 + 1,
-                    (Math.random() - 0.5) * 2
+                    (Math.random() - 0.5) * 20, // Spread across width
+                    Math.random() * 8 + (height / 2), // Height variation
+                    (Math.random() - 0.5) * 8 // Depth layers for 3D effect
                 );
+
+                // Random rotation for variety
+                flame.rotation.z = (Math.random() - 0.5) * 0.4;
+
+                // Animation data
                 flame.userData.oscillate = Math.random() * Math.PI * 2;
+                flame.userData.speed = 0.05 + Math.random() * 0.1;
+                flame.userData.scaleSpeed = 0.03 + Math.random() * 0.05;
+                flame.userData.baseHeight = flame.position.y;
+                flame.userData.heightVariation = 0.3 + Math.random() * 0.5;
+
                 group.add(flame);
             }
+
+            // Add some glowing ember particles
+            for (let i = 0; i < 30; i++) {
+                const emberGeo = new THREE.SphereGeometry(0.1 + Math.random() * 0.2, 8, 8);
+                const emberMat = new THREE.MeshStandardMaterial({
+                    color: 0xff4400,
+                    emissive: 0xff6600,
+                    emissiveIntensity: 3.0,
+                    transparent: true,
+                    opacity: 0.8
+                });
+
+                const ember = new THREE.Mesh(emberGeo, emberMat);
+                ember.position.set(
+                    (Math.random() - 0.5) * 18,
+                    Math.random() * 10,
+                    (Math.random() - 0.5) * 6
+                );
+
+                ember.userData.oscillate = Math.random() * Math.PI * 2;
+                ember.userData.speed = 0.08 + Math.random() * 0.1;
+
+                group.add(ember);
+            }
+
+            // Add point lights for fire glow effect
+            const fireLight1 = new THREE.PointLight(0xff6600, 3, 20);
+            fireLight1.position.set(0, 5, 0);
+            group.add(fireLight1);
+
+            const fireLight2 = new THREE.PointLight(0xff4400, 2, 15);
+            fireLight2.position.set(-5, 3, 2);
+            group.add(fireLight2);
+
+            const fireLight3 = new THREE.PointLight(0xff8800, 2, 15);
+            fireLight3.position.set(5, 3, -2);
+            group.add(fireLight3);
 
             group.position.z = -50;
             return group;
@@ -514,18 +588,54 @@
             camera.lookAt(player.position.x * 0.2, 2, 0);
         }
 
-        // Update fire wall
+        // Update fire wall with realistic animation
         function updateFireWall() {
             if (!fireWall) return;
 
             fireWall.position.z += fireSpeed;
 
-            // Animate flames
+            // Animate each flame realistically
             fireWall.children.forEach((child, index) => {
-                if (index > 0) { // Skip the wall itself
-                    child.userData.oscillate += 0.1;
-                    child.position.y += Math.sin(child.userData.oscillate) * 0.02;
-                    child.scale.y = 1 + Math.sin(child.userData.oscillate) * 0.2;
+                // Skip point lights (last 3 children)
+                if (child.type === 'PointLight') {
+                    // Flicker fire lights
+                    child.intensity = child.userData.baseIntensity || child.intensity;
+                    child.userData.baseIntensity = child.userData.baseIntensity || child.intensity;
+                    child.intensity += (Math.random() - 0.5) * 0.5;
+                    return;
+                }
+
+                // Animate flame cones and embers
+                if (child.userData.oscillate !== undefined) {
+                    child.userData.oscillate += child.userData.speed || 0.05;
+
+                    // Vertical dancing motion
+                    if (child.userData.baseHeight !== undefined) {
+                        child.position.y = child.userData.baseHeight +
+                            Math.sin(child.userData.oscillate) * child.userData.heightVariation;
+                    }
+
+                    // Scale pulsing for flickering effect
+                    const scaleOscillate = child.userData.oscillate * (child.userData.scaleSpeed || 1);
+                    child.scale.y = 1 + Math.sin(scaleOscillate) * 0.3;
+                    child.scale.x = 1 + Math.sin(scaleOscillate + 1) * 0.15;
+                    child.scale.z = 1 + Math.sin(scaleOscillate + 2) * 0.15;
+
+                    // Slight rotation wobble
+                    child.rotation.z += Math.sin(child.userData.oscillate * 0.5) * 0.01;
+
+                    // Opacity flicker for realistic fire
+                    if (child.material.transparent) {
+                        const baseOpacity = 0.8;
+                        child.material.opacity = baseOpacity + Math.sin(child.userData.oscillate * 2) * 0.2;
+                    }
+
+                    // Color intensity variation for hot spots
+                    if (child.material.emissiveIntensity) {
+                        const baseIntensity = child.userData.baseEmissive || child.material.emissiveIntensity;
+                        child.userData.baseEmissive = baseIntensity;
+                        child.material.emissiveIntensity = baseIntensity + Math.sin(child.userData.oscillate * 1.5) * 0.5;
+                    }
                 }
             });
 
