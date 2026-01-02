@@ -1,98 +1,79 @@
-# 🎮 Rumble Guys 3D - Web Game
+# 🔥 Marshmallow Mayhem 3D
 
-A fun, browser-based **3D** action game inspired by Stumble Guys! Control your character in full 3D, dodge obstacles, and collect coins in an immersive 3D environment!
+An intense 3D survival runner game where you play as a marshmallow running from fire while avoiding CPU opponents and obstacles!
+
+## 🎮 Game Concept
+
+You are a marshmallow trying to survive as long as possible! A massive wall of fire is chasing you from behind, and you must:
+- **Run forward** to stay ahead of the flames
+- **Dodge CPU marshmallows** that wobble across your path
+- **Jump over obstacles** like rocks and logs
+- **Survive as long as possible** to beat your high score!
 
 ## 🎯 How to Play
 
 - **A/D or Arrow Keys** ⬅️➡️ - Move left/right
-- **Spacebar** - Jump
-- **C Key** - Change character (during gameplay)
+- **Spacebar** - Jump over obstacles
+- Stay ahead of the fire wall chasing you!
 
-## 🎭 Playable Characters
+## 🔥 Game Features
 
-Choose from 15 unique characters, each with custom 3D models:
+### 3D Marshmallow Characters
+- **Soft, squishy 3D marshmallows** with cute faces
+- White player marshmallow (you!)
+- **5 colorful CPU marshmallow opponents** (pink, yellow, lavender, beige, plum)
+- Running animations with leg movements
+- Wobbling motion for CPU characters
 
-### 👥 People & Royalty
-- Human - Classic runner
-- King - Royal ruler with golden crown
-- Queen - Majestic monarch with flowing dress
+### Dynamic Threats
+- **🔥 Fire Wall** - Massive wall of animated flames chasing from behind
+- **Warning System** - Screen flashes when fire gets close
+- **CPU Opponents** - AI marshmallows that wobble and can knock you down
+- **Obstacles** - Rocks and logs to jump over
 
-### 🐾 Animals
-- Bear - Strong and cuddly
-- Bird - Swift and agile
-- Penguin - Adorable tuxedo bird
-- Rabbit - Hoppy with long ears
+### Progressive Difficulty
+- Game speed increases over time
+- Fire wall speeds up the longer you survive
+- More obstacles spawn as you progress
+- Survival gets harder every second!
 
-### 🌿 Nature
-- Tree - Mighty oak
-- Plant - Potted greenery
-- Flower - Blooming beauty
-- Cactus - Desert dweller with spines
+### Score Tracking
+- **Distance** - How far you've run
+- **Survival Time** - How long you lasted
+- **Best Time** - Your personal record (saved locally)
 
-### 🏀 Sports Characters
-- Sports Dog - Athletic canine in jersey #23
-- Sports Cat - Feline athlete in sports gear
-- Basketball - Bouncing ball character
+## 🌟 Visual Features
 
-### 🪑 Objects
-- Chair - Yes, you can play as furniture!
+- Full 3D graphics powered by Three.js
+- Real-time shadows and lighting
+- Animated fire with pulsing flames
+- Green grass terrain with grid
+- Atmospheric fog in the distance
+- Smooth character animations
 
-## 🌟 Features
+## 🏆 Objective
 
-### 🎮 3D Gameplay (Stumble Guys Style!)
-- **Full 3D graphics** powered by Three.js WebGL engine
-- **Dynamic 3D camera** that follows your character
-- **Real-time lighting and shadows** for immersive visuals
-- **3D physics simulation** with gravity and jumping
-- **Perspective 3D environment** with depth and atmosphere
+**Survive as long as possible!** The fire wall is relentless and never stops chasing. Dodge everything in your path and see how long you can last!
 
-### 👾 Characters & Customization
-- **15 unique 3D character models** - humans, animals, plants, royalty, sports athletes, and more!
-- **Character selection screen** with visual previews
-- **Switch characters mid-game** - press C anytime to change
-- Each character has **custom-designed 3D geometry** and materials
+## 💀 Ways to Lose
 
-### 🎯 Game Mechanics
-- **Progressive difficulty** - game speed increases with level
-- **Score tracking** with local high score saving
-- **3D collectible coins** with metallic shine effects
-- **3D obstacle course** with varying heights
-- **Smooth animations** and responsive controls
-
-### 💎 Polish & Quality
-- Clean, modern UI with gradient overlays
-- Fog effects for atmospheric depth
-- Grid-based 3D ground
-- Fully playable in any modern web browser (WebGL support required)
-
-## 🚀 Play Online
-
-This game is deployed on GitHub Pages and can be played at:
-`https://[username].github.io/rumbleguys/`
+1. **Caught by Fire** - The fire wall catches up to you
+2. **Hit CPU Marshmallow** - Collision with a CPU opponent
+3. **Hit Obstacle** - Running into rocks or logs while not jumping
 
 ## 🛠️ Technologies
 
 - **Three.js (r128)** - WebGL 3D graphics engine
 - **HTML5** - Structure and canvas element
 - **Vanilla JavaScript** - Game logic and physics
-- **CSS3** - UI styling and overlays
-- Runs entirely in the browser - no server needed!
+- **CSS3** - UI styling and animations
+- Runs entirely in the browser!
 
-## 📝 Game Mechanics
+## 🚀 Play Online
 
-- Navigate through a 3D obstacle course
-- Dodge **red 3D obstacles** that move toward you
-- Collect **golden spinning coins** for points (+10 per coin)
-- Game speed increases every 100 points (level up!)
-- Jump over obstacles using physics-based jumping
-- Character auto-rotates with idle animation
-- Camera dynamically follows your movement
-- Try to beat your high score!
-
-## 🏆 Objective
-
-Survive as long as possible while collecting coins and avoiding obstacles. Your high score is saved locally in your browser!
+Deploy via GitHub Pages at:
+`https://[username].github.io/rumbleguys/`
 
 ---
 
-Created with ❤️ for web gaming enthusiasts
+Created with 🔥 for marshmallow survival enthusiasts!
