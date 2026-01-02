@@ -258,6 +258,12 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
+        // Check if Three.js loaded
+        if (typeof THREE === 'undefined') {
+            alert('Three.js failed to load! Please check your internet connection and refresh the page.');
+            console.error('THREE is not defined - library failed to load');
+        }
+
         // Character definitions
         const characters = [
             { id: 'human', name: 'Human', icon: '🧍', primaryColor: 0x4a90e2, secondaryColor: 0xffdbac },
@@ -851,9 +857,16 @@
         }
 
         function startGame() {
-            document.getElementById('characterSelect').classList.add('hidden');
-            gameRunning = true;
-            restartGame();
+            console.log('Start game button clicked!');
+            try {
+                document.getElementById('characterSelect').classList.add('hidden');
+                gameRunning = true;
+                restartGame();
+                console.log('Game started successfully');
+            } catch (error) {
+                console.error('Error starting game:', error);
+                alert('Error starting game: ' + error.message);
+            }
         }
 
         // Input handling
@@ -1041,9 +1054,17 @@
         }
 
         // Initialize
-        initScene();
-        initCharacterSelect();
-        animate();
+        try {
+            initScene();
+            console.log('Scene initialized successfully');
+            initCharacterSelect();
+            console.log('Character select initialized successfully');
+            animate();
+            console.log('Animation started successfully');
+        } catch (error) {
+            console.error('Initialization error:', error);
+            alert('Error loading game: ' + error.message + '\n\nPlease refresh the page.');
+        }
     </script>
 </body>
 </html>
