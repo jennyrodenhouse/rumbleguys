@@ -112,23 +112,28 @@
             grid-template-columns: repeat(5, 1fr);
             gap: 20px;
             margin-bottom: 40px;
-            max-width: 900px;
+            max-width: 1000px;
             pointer-events: all;
         }
 
         .character-card {
             background: rgba(255, 255, 255, 0.1);
-            padding: 20px;
+            padding: 10px;
             border-radius: 20px;
             cursor: pointer;
             transition: all 0.3s;
             border: 4px solid transparent;
             text-align: center;
+            position: relative;
+            height: 180px;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
         }
 
         .character-card:hover {
             background: rgba(255, 255, 255, 0.2);
-            transform: scale(1.1) translateY(-5px);
+            transform: scale(1.05) translateY(-5px);
             border-color: #667eea;
         }
 
@@ -138,14 +143,17 @@
             box-shadow: 0 0 30px rgba(255, 215, 0, 0.6);
         }
 
-        .character-icon {
-            font-size: 3.5em;
-            margin-bottom: 10px;
+        .character-preview {
+            width: 100%;
+            height: 140px;
+            margin-bottom: 5px;
         }
 
         .character-name {
-            font-size: 1em;
+            font-size: 0.95em;
             font-weight: bold;
+            color: #fff;
+            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
 
         .game-over {
@@ -825,22 +833,86 @@
             coins.push(coin);
         }
 
-        // Initialize character selection
+        // Store preview renderers
+        const previewRenderers = [];
+
+        // Initialize character selection with 3D previews
         function initCharacterSelect() {
             const grid = document.getElementById('characterGrid');
-            characters.forEach(char => {
+            characters.forEach((char, index) => {
                 const card = document.createElement('div');
                 card.className = 'character-card';
                 if (char.id === selectedCharacter.id) {
                     card.classList.add('selected');
                 }
-                card.innerHTML = `
-                    <div class="character-icon">${char.icon}</div>
-                    <div class="character-name">${char.name}</div>
-                `;
+
+                // Create canvas for 3D preview
+                const canvas = document.createElement('canvas');
+                canvas.className = 'character-preview';
+                canvas.width = 160;
+                canvas.height = 140;
+
+                // Create name label
+                const nameLabel = document.createElement('div');
+                nameLabel.className = 'character-name';
+                nameLabel.textContent = char.name;
+
+                card.appendChild(canvas);
+                card.appendChild(nameLabel);
                 card.onclick = () => selectCharacter(char, card);
                 grid.appendChild(card);
+
+                // Create 3D preview scene for this character
+                createCharacterPreview(canvas, char, index);
             });
+        }
+
+        // Create a 3D preview for a character
+        function createCharacterPreview(canvas, charType, index) {
+            const previewScene = new THREE.Scene();
+            previewScene.background = new THREE.Color(0x667eea);
+
+            const previewCamera = new THREE.PerspectiveCamera(50, canvas.width / canvas.height, 0.1, 100);
+            previewCamera.position.set(0, 1.2, 4);
+            previewCamera.lookAt(0, 0.8, 0);
+
+            const previewRenderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+            previewRenderer.setSize(canvas.width, canvas.height);
+
+            // Lighting for preview
+            const ambLight = new THREE.AmbientLight(0xffffff, 0.7);
+            previewScene.add(ambLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.5);
+            dirLight.position.set(2, 3, 2);
+            previewScene.add(dirLight);
+
+            // Create character model
+            const characterModel = createCharacter(charType);
+            characterModel.position.y = 0;
+            previewScene.add(characterModel);
+
+            // Store renderer info
+            previewRenderers.push({
+                scene: previewScene,
+                camera: previewCamera,
+                renderer: previewRenderer,
+                character: characterModel,
+                rotation: 0
+            });
+
+            // Render the preview
+            function animatePreview() {
+                const preview = previewRenderers[index];
+                if (preview) {
+                    preview.rotation += 0.01;
+                    preview.character.rotation.y = preview.rotation;
+                    preview.renderer.render(preview.scene, preview.camera);
+                }
+            }
+
+            // Animate this preview
+            setInterval(animatePreview, 1000 / 30); // 30 FPS for previews
         }
 
         function selectCharacter(char, cardElement) {
@@ -863,7 +935,7 @@
 
         // Make startGame globally accessible
         window.startGame = function() {
-            console.log('Start game button clicked!');
+            console.log('Starting game with selected character:', selectedCharacter.name);
             try {
                 document.getElementById('characterSelect').classList.add('hidden');
                 gameRunning = true;
