@@ -1,17 +1,16 @@
-# 🎮 Rumble Guys - Web Game
+# 🎮 Rumble Guys 3D - Web Game
 
-A fun, browser-based action game where you control a character, dodge obstacles, and collect coins!
+A fun, browser-based **3D** action game inspired by Stumble Guys! Control your character in full 3D, dodge obstacles, and collect coins in an immersive 3D environment!
 
 ## 🎯 How to Play
 
-- **Left Arrow** ⬅️ - Move left
-- **Right Arrow** ➡️ - Move right
+- **A/D or Arrow Keys** ⬅️➡️ - Move left/right
 - **Spacebar** - Jump
 - **C Key** - Change character (during gameplay)
 
 ## 🎭 Playable Characters
 
-Choose from 15 unique characters, each with custom pixel art designs:
+Choose from 15 unique characters, each with custom 3D models:
 
 ### 👥 People & Royalty
 - Human - Classic runner
@@ -40,14 +39,31 @@ Choose from 15 unique characters, each with custom pixel art designs:
 
 ## 🌟 Features
 
-- Character selection screen with 15 unique playable characters
-- Each character has custom-designed pixel art sprites
-- Simple and intuitive controls
-- Progressive difficulty (game speed increases with level)
-- Score tracking with local high score saving
-- Smooth animations and responsive gameplay
-- Clean, modern design with gradient UI
-- Fully playable in any modern web browser
+### 🎮 3D Gameplay (Stumble Guys Style!)
+- **Full 3D graphics** powered by Three.js WebGL engine
+- **Dynamic 3D camera** that follows your character
+- **Real-time lighting and shadows** for immersive visuals
+- **3D physics simulation** with gravity and jumping
+- **Perspective 3D environment** with depth and atmosphere
+
+### 👾 Characters & Customization
+- **15 unique 3D character models** - humans, animals, plants, royalty, sports athletes, and more!
+- **Character selection screen** with visual previews
+- **Switch characters mid-game** - press C anytime to change
+- Each character has **custom-designed 3D geometry** and materials
+
+### 🎯 Game Mechanics
+- **Progressive difficulty** - game speed increases with level
+- **Score tracking** with local high score saving
+- **3D collectible coins** with metallic shine effects
+- **3D obstacle course** with varying heights
+- **Smooth animations** and responsive controls
+
+### 💎 Polish & Quality
+- Clean, modern UI with gradient overlays
+- Fog effects for atmospheric depth
+- Grid-based 3D ground
+- Fully playable in any modern web browser (WebGL support required)
 
 ## 🚀 Play Online
 
@@ -56,16 +72,21 @@ This game is deployed on GitHub Pages and can be played at:
 
 ## 🛠️ Technologies
 
-- HTML5 Canvas for graphics
-- Vanilla JavaScript for game logic
-- CSS3 for styling
-- No dependencies - runs entirely in the browser!
+- **Three.js (r128)** - WebGL 3D graphics engine
+- **HTML5** - Structure and canvas element
+- **Vanilla JavaScript** - Game logic and physics
+- **CSS3** - UI styling and overlays
+- Runs entirely in the browser - no server needed!
 
 ## 📝 Game Mechanics
 
-- Dodge red obstacles that appear from the right
-- Collect yellow coins for points (+10 per coin)
-- Game speed increases every 100 points
+- Navigate through a 3D obstacle course
+- Dodge **red 3D obstacles** that move toward you
+- Collect **golden spinning coins** for points (+10 per coin)
+- Game speed increases every 100 points (level up!)
+- Jump over obstacles using physics-based jumping
+- Character auto-rotates with idle animation
+- Camera dynamically follows your movement
 - Try to beat your high score!
 
 ## 🏆 Objective
