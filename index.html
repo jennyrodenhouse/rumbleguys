@@ -658,18 +658,30 @@
                     rabbitHead.castShadow = true;
                     group.add(rabbitHead);
 
-                    // Ears
-                    const rabbitEarGeo = new THREE.CapsuleGeometry(0.08, 0.4, 8, 16);
+                    // Ears (using cylinder + sphere for capsule effect)
+                    const rabbitEarGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.4, 8);
+                    const rabbitEarTopGeo = new THREE.SphereGeometry(0.08, 8, 8);
+
+                    // Left ear
                     const ear1 = new THREE.Mesh(rabbitEarGeo, rabbitBodyMat);
                     ear1.position.set(-0.15, 1.3, 0);
                     ear1.castShadow = true;
                     group.add(ear1);
+                    const ear1Top = new THREE.Mesh(rabbitEarTopGeo, rabbitBodyMat);
+                    ear1Top.position.set(-0.15, 1.5, 0);
+                    ear1Top.castShadow = true;
+                    group.add(ear1Top);
+
+                    // Right ear
                     const ear2 = ear1.clone();
                     ear2.position.x = 0.15;
                     group.add(ear2);
+                    const ear2Top = ear1Top.clone();
+                    ear2Top.position.x = 0.15;
+                    group.add(ear2Top);
 
                     // Inner ears
-                    const innerEarGeo = new THREE.CapsuleGeometry(0.05, 0.3, 8, 16);
+                    const innerEarGeo = new THREE.CylinderGeometry(0.05, 0.05, 0.3, 8);
                     const innerEarMat = new THREE.MeshStandardMaterial({ color: charType.secondaryColor });
                     const innerEar1 = new THREE.Mesh(innerEarGeo, innerEarMat);
                     innerEar1.position.set(-0.15, 1.3, 0.05);
