@@ -158,6 +158,62 @@
         .warning.active {
             display: block;
         }
+
+        .character-select {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 200;
+        }
+
+        .character-select.hidden {
+            display: none;
+        }
+
+        .character-select h2 {
+            color: #fff;
+            font-size: 3em;
+            margin-bottom: 40px;
+            text-shadow: 3px 3px 10px rgba(255, 107, 157, 0.8);
+        }
+
+        .character-grid {
+            display: flex;
+            gap: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+            max-width: 800px;
+        }
+
+        .character-option {
+            background: linear-gradient(135deg, #FF6B9D 0%, #C06C84 100%);
+            padding: 30px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            text-align: center;
+            color: #fff;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .character-option:hover {
+            transform: scale(1.1);
+            box-shadow: 0 10px 30px rgba(255, 107, 157, 0.8);
+        }
+
+        .character-option .character-icon {
+            font-size: 4em;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
@@ -188,6 +244,20 @@
         <button onclick="restartGame()">TRY AGAIN</button>
     </div>
 
+    <div class="character-select" id="characterSelect">
+        <h2>CHOOSE YOUR CHARACTER</h2>
+        <div class="character-grid">
+            <div class="character-option" onclick="selectCharacter('marshmallow')">
+                <div class="character-icon">🍥</div>
+                <div>Classic Marshmallow</div>
+            </div>
+            <div class="character-option" onclick="selectCharacter('football')">
+                <div class="character-icon">🏈</div>
+                <div>Drake Maye<br>#10 QB</div>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <script>
         // Check if Three.js loaded
@@ -200,7 +270,9 @@
         let player, fireWall;
         let cpuMarshmallows = [];
         let obstacles = [];
-        let gameRunning = true;
+        let gameRunning = false; // Start false until character selected
+        let gameInitialized = false;
+        let selectedCharacter = null;
         let distance = 0;
         let survivalTime = 0;
         let bestTime = localStorage.getItem('bestTime') || 0;
@@ -272,6 +344,86 @@
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
             renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        // Create Drake Maye football player marshmallow
+        function createFootballPlayer() {
+            const group = createMarshmallow(0xFFFFFF); // White marshmallow base
+
+            // Football helmet
+            const helmetGeo = new THREE.SphereGeometry(0.6, 16, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+            const helmetMat = new THREE.MeshStandardMaterial({
+                color: 0x003087, // UNC Blue
+                metalness: 0.6,
+                roughness: 0.3
+            });
+            const helmet = new THREE.Mesh(helmetGeo, helmetMat);
+            helmet.position.y = 1.3;
+            helmet.castShadow = true;
+            group.add(helmet);
+
+            // Face mask (simple bars)
+            const barGeo = new THREE.CylinderGeometry(0.02, 0.02, 0.4, 6);
+            const barMat = new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.8 });
+
+            const bar1 = new THREE.Mesh(barGeo, barMat);
+            bar1.position.set(0, 1.2, 0.55);
+            bar1.rotation.z = Math.PI / 2;
+            group.add(bar1);
+
+            const bar2 = new THREE.Mesh(barGeo, barMat);
+            bar2.position.set(0, 1.0, 0.55);
+            bar2.rotation.z = Math.PI / 2;
+            group.add(bar2);
+
+            // Jersey with number 10 (Drake Maye's number)
+            const jerseyGeo = new THREE.CylinderGeometry(0.52, 0.52, 1.2, 16);
+            const jerseyMat = new THREE.MeshStandardMaterial({
+                color: 0x7BAFD4, // Carolina Blue
+                roughness: 0.7
+            });
+            const jersey = new THREE.Mesh(jerseyGeo, jerseyMat);
+            jersey.position.y = 0.6;
+            jersey.castShadow = true;
+            group.add(jersey);
+
+            // Number "10" on jersey
+            const numberMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+
+            // "1"
+            const oneGeo = new THREE.BoxGeometry(0.08, 0.3, 0.02);
+            const one = new THREE.Mesh(oneGeo, numberMat);
+            one.position.set(-0.1, 0.7, 0.52);
+            group.add(one);
+
+            // "0"
+            const zeroGeo = new THREE.TorusGeometry(0.1, 0.04, 8, 12);
+            const zero = new THREE.Mesh(zeroGeo, numberMat);
+            zero.position.set(0.1, 0.7, 0.52);
+            zero.rotation.x = Math.PI / 2;
+            group.add(zero);
+
+            // Football in hand
+            const footballGeo = new THREE.SphereGeometry(0.15, 8, 8);
+            footballGeo.scale(1, 1, 1.3);
+            const footballMat = new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.8 });
+            const football = new THREE.Mesh(footballGeo, footballMat);
+            football.position.set(0.8, 0.5, 0);
+            football.rotation.z = Math.PI / 4;
+            football.castShadow = true;
+            group.add(football);
+
+            // Laces on football
+            const laceGeo = new THREE.BoxGeometry(0.02, 0.08, 0.02);
+            const laceMat = new THREE.MeshStandardMaterial({ color: 0xFFFFFF });
+            for (let i = 0; i < 3; i++) {
+                const lace = new THREE.Mesh(laceGeo, laceMat);
+                lace.position.set(0.8, 0.5 + (i - 1) * 0.05, 0.15);
+                lace.rotation.z = Math.PI / 4;
+                group.add(lace);
+            }
+
+            return group;
         }
 
         // Create cute cylinder marshmallow character
@@ -537,12 +689,29 @@
             return obstacle;
         }
 
+        // Character selection
+        window.selectCharacter = function(type) {
+            selectedCharacter = type;
+            document.getElementById('characterSelect').classList.add('hidden');
+
+            if (!gameInitialized) {
+                initGame();
+                gameInitialized = true;
+            }
+
+            gameRunning = true;
+        };
+
         // Initialize game
         function initGame() {
             initScene();
 
-            // Create player marshmallow
-            player = createMarshmallow(0xFFFFFF);
+            // Create player based on selection
+            if (selectedCharacter === 'football') {
+                player = createFootballPlayer();
+            } else {
+                player = createMarshmallow(0xFFFFFF);
+            }
             player.position.set(0, 0, 0);
             scene.add(player);
 
@@ -669,8 +838,14 @@
                 }
             });
 
-            // Check if fire caught player
-            if (fireWall.position.z > player.position.z - 2) {
+            // Check if fire caught player (tight 3D collision for 3x3 fire cluster)
+            const dx = player.position.x - fireWall.position.x;
+            const dy = player.position.y - fireWall.position.y;
+            const dz = player.position.z - fireWall.position.z;
+            const fireDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+            // Fire is 3x3x3 cluster, collision radius is 1.5 units (tight to visual)
+            if (fireDistance < 1.5) {
                 gameOver('TOASTED BY FIRE');
             }
 
@@ -769,7 +944,7 @@
             cpuMarshmallows = [];
             obstacles = [];
 
-            gameRunning = true;
+            gameRunning = false;
             distance = 0;
             survivalTime = 0;
             frameCount = 0;
@@ -782,9 +957,14 @@
             document.getElementById('time').textContent = survivalTime;
             document.getElementById('gameOver').classList.remove('active');
             document.getElementById('fireWarning').classList.remove('active');
+            document.getElementById('characterSelect').classList.remove('hidden');
 
-            // Recreate player
-            player = createMarshmallow(0xFFFFFF);
+            // Recreate player based on previous selection
+            if (selectedCharacter === 'football') {
+                player = createFootballPlayer();
+            } else {
+                player = createMarshmallow(0xFFFFFF);
+            }
             player.position.set(0, 0, 0);
             scene.add(player);
 
@@ -844,8 +1024,8 @@
             renderer.render(scene, camera);
         }
 
-        // Initialize and start
-        initGame();
+        // Initialize scene only (wait for character selection to start game)
+        initScene();
         animate();
     </script>
 </body>
